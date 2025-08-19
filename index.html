@@ -1,0 +1,2633 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حسابداری شخصی احرا (فارسی، ورود تاریخ دستی، چک)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vazirmatn Font -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts.css" rel="stylesheet">
+    <!-- Chart.js CDN for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f4f6; /* Light theme background */
+            direction: rtl;
+            text-align: right;
+        }
+        input::placeholder, textarea::placeholder {
+            text-align: right;
+        }
+
+        /* General card and shadow styles */
+        .rounded-2xl { border-radius: 16px; }
+        .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06); }
+
+        /* Navigation bar items - uniform size and alignment */
+        .nav-item {
+            flex: 1; /* Distribute space evenly */
+            max-width: 100px; /* Limit max width for larger screens */
+            padding: 0.75rem 0.5rem; /* Adjusted padding for better fit */
+            border-radius: 12px; /* Slightly more rounded */
+            justify-content: center; /* Center content horizontally */
+            align-items: center; /* Center content vertically */
+            transition: all 0.2s ease-in-out; /* Smoother transitions */
+            font-size: 0.8rem; /* Slightly smaller font for nav labels */
+        }
+        .nav-item.active {
+            color: #2563eb; /* Blue for active */
+            background-color: #eff6ff; /* Light blue background for active */
+        }
+        .nav-item:hover:not(.active) {
+            color: #3b82f6; /* Deeper blue on hover */
+            background-color: #e0f2fe; /* Lighter blue background on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+        .nav-item svg {
+            margin-bottom: 4px; /* Space between icon and text */
+        }
+
+        /* Form Interaction Effects */
+        input:focus, select:focus, textarea:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+            outline: none;
+        }
+
+        /* Animations for tab content */
+        .tab-content {
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 10px;
+            z-index: 9999;
+        }
+        .toast {
+            background-color: #333;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideIn 0.3s forwards, fadeOut 0.5s 2.5s forwards;
+            min-width: 250px;
+            text-align: right;
+            border-right: 5px solid;
+        }
+        .toast.success { border-color: #10b981; }
+        .toast.error { border-color: #ef4444; }
+        .toast.info { border-color: #3b82f6; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* Striped rows for lists */
+        .divide-y > *:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        /* New button style for adding items (small plus icon) */
+        .add-item-icon-btn {
+            padding: 8px 10px; /* Smaller padding */
+            background-color: #3b82f6; /* Blue background */
+            color: white; /* White icon */
+            border-radius: 8px; /* Rounded corners */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0; /* Don't allow it to shrink */
+            transition: all 0.2s ease-in-out;
+        }
+        .add-item-icon-btn:hover {
+            background-color: #2563eb; /* Darker blue on hover */
+            transform: scale(1.05);
+        }
+        .add-item-icon-btn svg {
+            width: 20px; /* Icon size */
+            height: 20px; /* Icon size */
+        }
+
+        /* Dashboard card size adjustments */
+        .dashboard-card {
+            padding: 1.25rem; /* Smaller padding */
+        }
+        .dashboard-card .amount {
+            font-size: 2.5rem; /* Smaller font size for amount */
+        }
+        .dashboard-card .unit {
+            font-size: 1.5rem; /* Smaller font size for unit (تومان) */
+        }
+
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 640px) {
+            .p-4 { padding: 1rem; }
+            .nav-item span { display: none; } /* Hide text for very small screens */
+            .nav-item { padding: 0.5rem; }
+            .text-2xl { font-size: 1.5rem; }
+            .text-xl { font-size: 1.25rem; }
+            .text-lg { font-size: 1.1rem; }
+            .transaction-item, .budget-item, .loan-item, .check-item, .task-note-item {
+                flex-direction: column;
+                align-items: flex-end;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 shadow-lg flex justify-center items-center rounded-b-xl">
+        <h1 class="text-2xl font-bold">حسابداری شخصی شما</h1>
+    </header>
+
+    <!-- Main Content Area -->
+    <main id="main-content" class="flex-grow p-4 overflow-auto tab-content">
+        <!-- Content will be loaded here by JavaScript -->
+    </main>
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white p-3 shadow-2xl flex justify-around items-center rounded-t-xl sticky bottom-0 w-full">
+        <button class="nav-item flex flex-col items-center active" data-tab="dashboard">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="text-xs mt-1">داشبورد</span>
+        </button>
+        <button class="nav-item flex flex-col items-center" data-tab="transactions">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-credit-card"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+            <span class="text-xs mt-1">تراکنش‌ها</span>
+        </button>
+        <button class="nav-item flex flex-col items-center" data-tab="budgets">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet"><path d="M19 7V4a1 2 0 0 0-1-1H5a2 2 0 0 0 0 4h12a2 2 0 0 1 0 4H5a2 2 0 0 0 0 4h12c.74 0 1.42.29 1.9.86a2.1 2 0 0 0 .17 2.94"/> <path d="M18.7 17.3c-.47.57-1.15.86-1.9.86H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v11a2.1 2 0 0 1-.17.94Z"/></svg>
+            <span class="text-xs mt-1">بودجه‌ها</span>
+        </button>
+        <button class="nav-item flex flex-col items-center" data-tab="loans">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-dollar-sign"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4h-6"/><path d="M12 3v18"/></svg>
+            <span class="text-xs mt-1">وام‌ها</span>
+        </button>
+        <button class="nav-item flex flex-col items-center" data-tab="checks">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-receipt-text"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M18 16H8"/></svg>
+            <span class="text-xs mt-1">چک‌ها</span>
+        </button>
+        <button class="nav-item flex flex-col items-center" data-tab="reports">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>
+            <span class="text-xs mt-1">گزارشات</span>
+        </button>
+        <button class="nav-item flex flex-col items-center" data-tab="tasks-notes">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-checks"><path d="m3 16 2 2 4-4"/><path d="m3 12 2 2 4-4"/><path d="m3 8 2 2 4-4"/><path d="M11 6h10"/><path d="M11 10h10"/><path d="M11 14h10"/><path d="M11 18h10"/></svg>
+            <span class="text-xs mt-1">وظایف/یادداشت</span>
+        </button>
+    </nav>
+
+    <!-- Custom Modal for Alerts/Confirmations -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-2xl shadow-lg max-w-sm w-full text-center relative">
+            <button id="modal-close-btn" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <p id="modal-message" class="text-lg font-semibold mb-4"></p>
+            <div id="modal-buttons" class="flex justify-center space-x-4 rtl:space-x-reverse">
+                <!-- Buttons will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Form Modal -->
+    <div id="transaction-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-2xl shadow-lg max-w-lg w-full relative max-h-[80vh] overflow-y-auto">
+            <button id="transaction-modal-close-btn" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <h3 id="transaction-form-title" class="text-xl font-semibold text-gray-700 mb-4">افزودن تراکنش جدید</h3>
+            <div class="flex flex-col space-y-4">
+                <input
+                    type="text"
+                    id="transaction-description"
+                    placeholder="توضیحات (مثال: خرید مواد غذایی)"
+                    class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style="text-align: right;"
+                />
+                <input
+                    type="text"
+                    id="transaction-category"
+                    placeholder="دسته‌بندی (مثال: غذا)"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    list="category-suggestions"
+                    style="text-align: right;"
+                />
+                <datalist id="category-suggestions"></datalist>
+                <input
+                    type="number"
+                    id="transaction-amount"
+                    placeholder="مبلغ (مثال: ۵۰۰۰۰)"
+                    class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style="text-align: right;"
+                />
+                <input
+                    type="date"
+                    id="transaction-date"
+                    placeholder="تاریخ (مثال: YYYY-MM-DD)"
+                    class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style="text-align: right;"
+                />
+                <div class="flex space-x-4 rtl:space-x-reverse">
+                    <label class="flex items-center cursor-pointer">
+                        <input
+                            type="radio"
+                            name="transactionType"
+                            value="expense"
+                            id="type-expense"
+                            checked
+                            class="form-radio text-red-600 h-5 w-5"
+                        />
+                        <span class="ml-2 text-red-600 font-medium">هزینه</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input
+                            type="radio"
+                            name="transactionType"
+                            value="income"
+                            id="type-income"
+                            class="form-radio text-green-600 h-5 w-5"
+                        />
+                        <span class="ml-2 text-green-600 font-medium">درآمد</span>
+                    </label>
+                </div>
+
+                <!-- Account Selection with small add button -->
+                <div class="flex items-center gap-2">
+                    <select
+                        id="transaction-account"
+                        class="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">انتخاب حساب (اجباری)</option>
+                    </select>
+                    <button
+                        id="add-new-account-btn"
+                        class="add-item-icon-btn"
+                        title="افزودن حساب جدید"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Family Member Selection with small add button -->
+                <div class="flex items-center gap-2">
+                    <select
+                        id="transaction-family-member"
+                        class="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">اعضای خانواده (اختیاری)</option>
+                    </select>
+                    <button
+                        id="add-new-family-member-btn"
+                        class="add-item-icon-btn"
+                        title="افزودن عضو جدید"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Project Selection with small add button -->
+                <div class="flex items-center gap-2">
+                    <select
+                        id="transaction-project"
+                        class="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">پروژه (اختیاری)</option>
+                    </select>
+                    <button
+                        id="add-new-project-btn"
+                        class="add-item-icon-btn"
+                        title="افزودن پروژه جدید"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Event Selection with small add button -->
+                <div class="flex items-center gap-2">
+                    <select
+                        id="transaction-event"
+                        class="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">رویداد (اختیاری)</option>
+                    </select>
+                    <button
+                        id="add-new-event-btn"
+                        class="add-item-icon-btn"
+                        title="افزودن رویداد جدید"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+                    </button>
+                </div>
+
+                <button
+                    id="add-update-transaction-btn"
+                    class="p-3 rounded-lg text-lg text-white font-bold transition-transform duration-300 bg-blue-600 hover:bg-blue-700 hover:scale-105"
+                >
+                    افزودن تراکنش
+                </button>
+                <button
+                    id="cancel-edit-btn"
+                    class="p-3 rounded-lg text-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 hover:scale-105 transition-transform duration-300 hidden"
+                >
+                    لغو ویرایش
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Add Item Modal -->
+    <div id="add-item-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-2xl shadow-lg max-w-sm w-full relative">
+            <button id="add-item-modal-close-btn" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+            <h3 id="add-item-modal-title" class="text-xl font-semibold text-gray-700 mb-4"></h3>
+            <div class="flex flex-col space-y-4">
+                <input
+                    type="text"
+                    id="add-item-input-field"
+                    placeholder="نام جدید"
+                    class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style="text-align: right;"
+                />
+                <button
+                    id="add-item-confirm-btn"
+                    class="p-3 rounded-lg text-lg text-white font-bold transition-transform duration-300 bg-blue-600 hover:bg-blue-700 hover:scale-105"
+                >
+                    افزودن
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+
+    <script>
+        // --- Number and Date Formatting Utilities ---
+
+        /**
+         * Converts Western (Latin) digits to Persian (Farsi) digits.
+         * @param {string|number} input - The input string or number.
+         * @returns {string} - The string with Persian digits.
+         */
+        function toPersianDigits(input) {
+            const numbers = {
+                '0': '۰', '1': '۱', '2': '۲', '3': '۳', '4': '۴',
+                '5': '۵', '6': '۶', '7': '۷', '8': '۸', '9': '۹'
+            };
+            return String(input).replace(/[0-9]/g, char => numbers[char]);
+        }
+        
+        // --- Utility Functions for LocalStorage ---
+
+        /**
+         * Loads data from localStorage.
+         * @param {string} key - The key to retrieve data for.
+         * @returns {Array} - Parsed data or an empty array if not found/invalid.
+         */
+        function loadData(key) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error(`Error loading data from localStorage for key "${key}":`, e);
+                return [];
+            }
+        }
+
+        /**
+         * Saves data to localStorage.
+         * @param {string} key - The key to save data under.
+         * @param {Array} data - The data array to save.
+         */
+        function saveData(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                console.error(`Error saving data to localStorage for key "${key}":`, e);
+                showToast('خطا در ذخیره سازی داده‌ها.', 'error');
+            }
+        }
+
+        // --- Global State Variables ---
+        let transactions = loadData('transactions');
+        let budgets = loadData('budgets');
+        let loans = loadData('loans');
+        let checks = loadData('checks');
+        let tasksNotes = loadData('tasksNotes');
+
+        let familyMembers = loadData('familyMembers') || ['خودم', 'همسر', 'فرزند'];
+        let projects = loadData('projects') || ['شخصی', 'کاری', 'پروژه خانه'];
+        let events = loadData('events') || ['خرید روزانه', 'سفر', 'تعمیرات'];
+
+        let accounts = loadData('accounts');
+        if (accounts.length === 0) {
+            accounts = [
+                { id: 'acc-' + Date.now(), name: 'نقدی', balance: 0, type: 'cash' },
+                { id: 'acc-' + (Date.now() + 1), name: 'بانک اصلی', balance: 0, type: 'bank' }
+            ];
+            saveData('accounts', accounts);
+        }
+
+        let currentEditingTransactionId = null;
+        let currentEditingBudgetId = null;
+        let currentEditingLoanId = null;
+        let currentEditingCheckId = null;
+        let currentEditingTaskNoteId = null;
+
+        // --- Custom Modal Functions (for confirmations) ---
+        const modal = document.getElementById('custom-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalButtons = document.getElementById('modal-buttons');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        let currentModalCallback = null;
+
+        /**
+         * Shows a custom modal message (primarily for confirmations).
+         * @param {string} message - The message to display.
+         * @param {Function} [confirmCallback=null] - Optional callback for confirmation.
+         */
+        function showModal(message, confirmCallback = null) {
+            modalMessage.textContent = message;
+            modalButtons.innerHTML = '';
+            currentModalCallback = confirmCallback;
+
+            if (confirmCallback) {
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 hover:scale-105';
+                confirmBtn.textContent = 'بله';
+                confirmBtn.onclick = () => {
+                    if (currentModalCallback) {
+                        currentModalCallback();
+                    }
+                    modal.classList.add('hidden');
+                };
+
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200 hover:scale-105';
+                cancelBtn.textContent = 'خیر';
+                cancelBtn.onclick = () => {
+                    modal.classList.add('hidden');
+                };
+                modalButtons.appendChild(confirmBtn);
+                modalButtons.appendChild(cancelBtn);
+            } else {
+                const okBtn = document.createElement('button');
+                okBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 hover:scale-105';
+                okBtn.textContent = 'باشه';
+                okBtn.onclick = () => {
+                    modal.classList.add('hidden');
+                };
+                modalButtons.appendChild(okBtn);
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        modalCloseBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+
+
+        // --- Toast Notification System ---
+        const toastContainer = document.getElementById('toast-container');
+
+        /**
+         * Shows a temporary toast notification.
+         * @param {string} message - The message to display.
+         * @param {'success'|'error'|'info'} type - Type of toast for styling (default 'info').
+         */
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.classList.add('toast', type);
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // --- Component Rendering Functions ---
+
+        /**
+         * Renders the Dashboard tab content.
+         */
+        function renderDashboard() {
+            const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+            const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+            const netBalance = totalIncome - totalExpense;
+
+            const content = `
+                <div class="space-y-6">
+                    <h2 class="text-3xl font-extrabold text-center text-blue-700 mb-6">خلاصه مالی</h2>
+
+                    <!-- Balance Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        ${dashboardCard('مانده خالص', netBalance, 'balance')}
+                        ${dashboardCard('کل درآمد', totalIncome, 'income')}
+                        ${dashboardCard('کل هزینه', totalExpense, 'expense')}
+                    </div>
+
+                    <!-- Account Balances -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-banknote ml-2 rtl:mr-2"/><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>
+                            موجودی حساب‌ها
+                        </h3>
+                        ${accounts.length === 0 ? `
+                            <p class="text-gray-500 text-center py-4">هنوز حسابی ثبت نشده است.</p>
+                        ` : `
+                            <ul class="divide-y divide-gray-200">
+                                ${accounts.map(account => `
+                                    <li class="py-3 flex justify-between items-center bg-white">
+                                        <p class="font-medium text-gray-900">${account.name} <span class="text-xs text-gray-400">(${account.type === 'cash' ? 'نقدی' : 'بانکی'})</span></p>
+                                        <span class="font-semibold ${account.balance >= 0 ? 'text-green-600' : 'text-red-600'}">
+                                            ${toPersianDigits(account.balance.toLocaleString('fa-IR'))} <span class="text-sm text-gray-900">تومان</span>
+                                        </span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        `}
+                    </div>
+
+                    <!-- Recent Transactions -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-credit-card ml-2 rtl:mr-2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                            آخرین تراکنش‌ها
+                        </h3>
+                        ${transactions.length === 0 ? `
+                            <p class="text-gray-500 text-center py-4">هنوز تراکنشی ثبت نشده است.</p>
+                        ` : `
+                            <ul class="divide-y divide-gray-200">
+                                ${transactions.slice(0, 5).map(t => `
+                                    <li class="py-3 flex justify-between items-center">
+                                        <div>
+                                            <p class="font-medium text-gray-900">${t.description} ${t.category ? `<span class="text-xs text-gray-400">(${t.category})</span>` : ''}</p>
+                                            <p class="text-sm text-gray-500">${t.date.split('T')[0]}</p>
+                                        </div>
+                                        <span class="font-semibold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+                                            ${t.type === 'income' ? '+' : '-'} ${toPersianDigits(parseFloat(t.amount || 0).toLocaleString('fa-IR'))} تومان
+                                        </span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        `}
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus ml-2 rtl:mr-2"/><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+                            عملیات سریع
+                        </h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            ${actionButton('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>', 'افزودن درآمد', 'green', 'transactions', { type: 'income' })}
+                            ${actionButton('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus"><line x1="5" x2="19" y1="12" y2="12"/></svg>', 'افزودن هزینه', 'red', 'transactions', { type: 'expense' })}
+                            ${actionButton('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet"><path d="M19 7V4a1 2 0 0 0-1-1H5a2 2 0 0 0 0 4h12a2 2 0 0 1 0 4H5a2 2 0 0 0 0 4h12c.74 0 1.42.29 1.9.86a2.1 2 0 0 0 .17 2.94"/> <path d="M18.7 17.3c-.47.57-1.15.86-1.9.86H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v11a2.1 2 0 0 1-.17.94Z"/></svg>', 'ایجاد بودجه', 'blue', 'budgets')}
+                            ${actionButton('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-dollar-sign"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4h-6"/><path d="M12 3v18"/></svg>', 'افزودن وام', 'purple', 'loans')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+            addQuickActionListeners();
+        }
+
+        /**
+         * Generates HTML for a dashboard card.
+         * @param {string} title - The card title.
+         * @param {number} amount - The amount to display.
+         * @param {string} type - 'balance', 'income', or 'expense' for styling.
+         * @returns {string} - HTML string.
+         */
+        function dashboardCard(title, amount, type) {
+            let bgColor = 'bg-blue-500';
+            if (type === 'income') {
+                bgColor = 'bg-green-500';
+            } else if (type === 'expense') {
+                bgColor = 'bg-red-500';
+            } else if (type === 'balance') {
+                bgColor = 'bg-indigo-500';
+            }
+            return `
+                <div class="p-4 rounded-2xl shadow-md transform hover:scale-105 transition-transform duration-300 ${bgColor} text-white dashboard-card">
+                    <h3 class="text-lg font-semibold mb-2">${title}</h3>
+                    <p class="font-bold amount">${toPersianDigits(amount.toLocaleString('fa-IR'))} <span class="unit">تومان</span></p>
+                </div>
+            `;
+        }
+
+        /**
+         * Generates HTML for an action button.
+         * @param {string} iconSvg - SVG string for the icon.
+         * @param {string} label - The button label.
+         * @param {string} color - 'green', 'red', 'blue', 'purple' for styling.
+         * @param {string} targetTab - The data-tab value to switch to.
+         * @param {object} [extraData={}] - Extra data to store for specific actions (e.g., transaction type).
+         * @returns {string} - HTML string.
+         */
+        function actionButton(iconSvg, label, color, targetTab, extraData = {}) {
+            let btnColorClass = 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+            if (color === 'green') btnColorClass = 'bg-green-50 text-green-700 hover:bg-green-100';
+            if (color === 'red') btnColorClass = 'bg-red-50 text-red-700 hover:bg-red-100';
+            if (color === 'blue') btnColorClass = 'bg-blue-50 text-blue-700 hover:bg-blue-100';
+            if (color === 'purple') btnColorClass = 'bg-purple-50 text-purple-700 hover:bg-purple-100';
+
+            const dataAttributes = `data-target-tab="${targetTab}" ${Object.entries(extraData).map(([key, value]) => `data-${key}="${value}"`).join(' ')}`;
+
+            return `
+                <button class="quick-action-btn flex flex-col items-center p-4 rounded-xl shadow-md transition-colors duration-200 ${btnColorClass} hover:scale-105 transition-transform duration-300" ${dataAttributes}>
+                    ${iconSvg}
+                    <span class="text-sm mt-2 font-medium">${label}</span>
+                </button>
+            `;
+        }
+
+        /**
+         * Attaches event listeners to quick action buttons on the dashboard.
+         */
+        function addQuickActionListeners() {
+            document.querySelectorAll('.quick-action-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const targetTab = event.currentTarget.dataset.targetTab;
+                    const transactionType = event.currentTarget.dataset.type;
+
+                    switchTab(targetTab);
+
+                    if (targetTab === 'transactions' && transactionType) {
+                        if (transactionType === 'income') {
+                            document.getElementById('type-income').checked = true;
+                        } else if (transactionType === 'expense') {
+                            document.getElementById('type-expense').checked = true;
+                        }
+                        showTransactionModal();
+                    }
+                });
+            });
+        }
+
+        /**
+         * Populates a select dropdown with options from an array.
+         * @param {string} selectId - The ID of the select element.
+         * @param {Array<Object>} dataArray - The array of objects (e.g., accounts, each with id and name).
+         * @param {string} valueKey - The key for the option's value (e.g., 'id' for accounts).
+         * @param {string} textKey - The key for the option's display text (e.g., 'name' for accounts).
+         * @param {string} [initialOptionText=''] - Optional text for the first (empty) option.
+         */
+        function populateDropdown(selectId, dataArray, valueKey, textKey, initialOptionText = '') {
+            const selectElement = document.getElementById(selectId);
+            if (!selectElement) return;
+
+            selectElement.innerHTML = `<option value="">${initialOptionText}</option>`;
+            dataArray.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item[valueKey];
+                option.textContent = item[textKey];
+                selectElement.appendChild(option);
+            });
+        }
+
+
+        /**
+         * Recalculates all account balances based on current transactions.
+         * This function should be called whenever the `transactions` array changes.
+         */
+        function recalculateAccountBalances() {
+            const tempBalances = {};
+            accounts.forEach(acc => tempBalances[acc.id] = 0);
+
+            transactions.forEach(t => {
+                if (t.accountId && tempBalances.hasOwnProperty(t.accountId)) {
+                    if (t.type === 'income') {
+                        tempBalances[t.accountId] += parseFloat(t.amount || 0);
+                    } else if (t.type === 'expense') {
+                        tempBalances[t.accountId] -= parseFloat(t.amount || 0);
+                    }
+                }
+            });
+
+            accounts = accounts.map(acc => ({
+                ...acc,
+                balance: tempBalances[acc.id] !== undefined ? tempBalances[acc.id] : acc.balance
+            }));
+            saveData('accounts', accounts);
+        }
+
+
+        // --- Transaction Modal and Form Management ---
+        const transactionModal = document.getElementById('transaction-modal');
+        const transactionModalCloseBtn = document.getElementById('transaction-modal-close-btn');
+
+        /**
+         * Populates the category suggestions datalist.
+         */
+        function populateCategorySuggestions() {
+            const categoryDatalist = document.getElementById('category-suggestions');
+            if (!categoryDatalist) return;
+
+            const uniqueCategories = [...new Set(transactions.map(t => t.category).filter(c => c))];
+            
+            const defaultCategories = ['غذا', 'حمل و نقل', 'قبوض', 'مسکن', 'سرگرمی', 'آموزش', 'پوشاک', 'سلامت', 'پس انداز'];
+            const allCategories = [...new Set([...uniqueCategories, ...defaultCategories])].sort();
+
+            categoryDatalist.innerHTML = '';
+            allCategories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                categoryDatalist.appendChild(option);
+            });
+        }
+
+
+        /**
+         * Shows the transaction form modal.
+         * @param {Object} [transaction=null] - The transaction object to edit. If null, it's for adding.
+         */
+        function showTransactionModal(transaction = null) {
+            populateDropdown('transaction-account', accounts, 'id', 'name', 'انتخاب حساب (اجباری)');
+            populateDropdown('transaction-family-member', familyMembers.map(name => ({ id: name, name: name })), 'id', 'name', 'اعضای خانواده (اختیاری)');
+            populateDropdown('transaction-project', projects.map(name => ({ id: name, name: name })), 'id', 'name', 'پروژه (اختیاری)');
+            populateDropdown('transaction-event', events.map(name => ({ id: name, name: name })), 'id', 'name', 'رویداد (اختیاری)');
+            populateCategorySuggestions();
+
+            if (transaction) {
+                fillFormForEdit(transaction);
+            } else {
+                resetTransactionForm();
+            }
+            transactionModal.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the transaction form modal and resets the form.
+         */
+        function closeTransactionModal() {
+            transactionModal.classList.add('hidden');
+            resetTransactionForm();
+        }
+
+        if (transactionModalCloseBtn) {
+            transactionModalCloseBtn.addEventListener('click', closeTransactionModal);
+        }
+
+        // --- Generic Add Item Modal Logic ---
+        let currentAddItemType = null;
+        let currentAddItemSelectId = null;
+        let currentAddItemLocalStorageKey = null;
+        let currentAddItemDropdownText = null;
+        let currentAddItemValueKey = null;
+        let currentAddItemTextKey = null;
+
+        const addItemModal = document.getElementById('add-item-modal');
+        const addItemModalTitle = document.getElementById('add-item-modal-title');
+        const addItemInputField = document.getElementById('add-item-input-field');
+        const addItemConfirmBtn = document.getElementById('add-item-confirm-btn');
+        const addItemModalCloseBtn = document.getElementById('add-item-modal-close-btn');
+
+        function showAddItemModal(type, selectId, localStorageKey, dropdownText, title, valueKey = 'id', textKey = 'name') {
+            currentAddItemType = type;
+            currentAddItemSelectId = selectId;
+            currentAddItemLocalStorageKey = localStorageKey;
+            currentAddItemDropdownText = dropdownText;
+            currentAddItemValueKey = valueKey;
+            currentAddItemTextKey = textKey;
+
+            addItemModalTitle.textContent = title;
+            addItemInputField.value = '';
+            addItemModal.classList.remove('hidden');
+        }
+
+        function closeAddItemModal() {
+            addItemModal.classList.add('hidden');
+            addItemInputField.value = '';
+            currentAddItemType = null;
+        }
+
+        if (addItemModalCloseBtn) {
+            addItemModalCloseBtn.addEventListener('click', closeAddItemModal);
+        }
+        if (addItemConfirmBtn) {
+            addItemConfirmBtn.addEventListener('click', handleAddItemConfirm);
+        }
+
+        function _handleAddListItemLogic(newItemName, listArray, localStorageKey, selectId, valueKey, textKey, initialOptionText) {
+            const itemExists = listArray.some(item => (item.name || item).toLowerCase() === newItemName.toLowerCase());
+            if (itemExists) {
+                showToast(`"${newItemName}" قبلاً در لیست وجود دارد.`, 'error');
+                return false;
+            }
+
+            listArray.push(newItemName);
+            saveData(localStorageKey, listArray);
+            populateDropdown(selectId, listArray.map(name => ({ id: name, name: name })), valueKey, textKey, initialOptionText);
+            showToast(`"${newItemName}" به لیست اضافه شد.`, 'success');
+            return true;
+        }
+
+        function _handleAddAccountItemLogic(newAccountName) {
+            const accountExists = accounts.some(acc => acc.name.toLowerCase() === newAccountName.toLowerCase());
+            if (accountExists) {
+                showToast(`حساب "${newAccountName}" قبلاً وجود دارد.`, 'error');
+                return false;
+            }
+
+            const newAccount = {
+                id: 'acc-' + Date.now(),
+                name: newAccountName,
+                balance: 0,
+                type: 'cash'
+            };
+
+            accounts.push(newAccount);
+            saveData('accounts', accounts);
+            populateDropdown('transaction-account', accounts, 'id', 'name', 'انتخاب حساب (اجباری)');
+            renderDashboard();
+            showToast(`حساب "${newAccountName}" با موفقیت اضافه شد.`, 'success');
+            return true;
+        }
+
+        function handleAddItemConfirm() {
+            const newItemName = addItemInputField.value.trim();
+            if (!newItemName) {
+                showToast('لطفاً نامی برای افزودن وارد کنید.', 'error');
+                return;
+            }
+
+            let success = false;
+            switch (currentAddItemType) {
+                case 'account':
+                    success = _handleAddAccountItemLogic(newItemName);
+                    break;
+                case 'familyMember':
+                    success = _handleAddListItemLogic(newItemName, familyMembers, currentAddItemLocalStorageKey, currentAddItemSelectId, 'id', 'name', currentAddItemDropdownText);
+                    break;
+                case 'project':
+                    success = _handleAddListItemLogic(newItemName, projects, currentAddItemLocalStorageKey, currentAddItemSelectId, 'id', 'name', currentAddItemDropdownText);
+                    break;
+                case 'event':
+                    success = _handleAddListItemLogic(newItemName, events, currentAddItemLocalStorageKey, currentAddItemSelectId, 'id', 'name', currentAddItemDropdownText);
+                    break;
+                default:
+                    showToast('نوع آیتم نامشخص است.', 'error');
+                    return;
+            }
+
+            if (success) {
+                closeAddItemModal();
+            }
+        }
+
+
+        /**
+         * Renders the Transactions tab content.
+         */
+        function renderTransactions() {
+            const content = `
+                <div class="space-y-6">
+                    <h2 class="text-3xl font-extrabold text-center text-blue-700 mb-6">مدیریت تراکنش‌ها</h2>
+
+                    <!-- Add New Transaction Button -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md text-center">
+                        <button
+                            id="open-transaction-modal-btn"
+                            class="p-4 w-full bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-700 transition-colors duration-300 hover:scale-105 flex items-center justify-center"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus ml-2 rtl:mr-2"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+                            افزودن تراکنش جدید
+                        </button>
+                    </div>
+
+                    <!-- Transaction List -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-banknote ml-2 rtl:mr-2"/><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>
+                            لیست تراکنش‌ها
+                        </h3>
+                        <div id="transaction-list">
+                            <!-- Transactions will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+
+            const openTransactionModalBtn = document.getElementById('open-transaction-modal-btn');
+            if (openTransactionModalBtn) {
+                openTransactionModalBtn.onclick = () => showTransactionModal();
+            }
+
+            addTransactionFormEventListeners();
+            updateTransactionList();
+        }
+
+        /**
+         * Adds event listeners for transaction form elements (now in modal) and list.
+         */
+        function addTransactionFormEventListeners() {
+            const addUpdateBtn = document.getElementById('add-update-transaction-btn');
+            const cancelEditBtn = document.getElementById('cancel-edit-btn');
+            const transactionDateInput = document.getElementById('transaction-date');
+
+            const addNewAccountBtn = document.getElementById('add-new-account-btn');
+            const addNewFamilyMemberBtn = document.getElementById('add-new-family-member-btn');
+            const addNewProjectBtn = document.getElementById('add-new-project-btn');
+            const addNewEventBtn = document.getElementById('add-new-event-btn');
+
+            if (addUpdateBtn) addUpdateBtn.onclick = handleAddOrUpdateTransaction;
+            if (cancelEditBtn) cancelEditBtn.onclick = cancelEditTransaction;
+            
+            // Set default date for new transactions
+            if (transactionDateInput) {
+                transactionDateInput.value = new Date().toISOString().split('T')[0];
+            }
+
+            document.getElementById('transaction-list').addEventListener('click', (event) => {
+                const target = event.target.closest('button');
+                if (!target) return;
+
+                const transactionId = target.dataset.id;
+                if (target.classList.contains('edit-btn')) {
+                    handleEditTransaction(transactionId);
+                } else if (target.classList.contains('delete-btn')) {
+                    handleDeleteTransaction(transactionId);
+                }
+            });
+
+            // Event listeners for add new item buttons in transaction modal
+            if (addNewAccountBtn) addNewAccountBtn.onclick = () => showAddItemModal('account', 'transaction-account', 'accounts', 'انتخاب حساب (اجباری)', 'افزودن حساب جدید', 'id', 'name');
+            if (addNewFamilyMemberBtn) addNewFamilyMemberBtn.onclick = () => showAddItemModal('familyMember', 'transaction-family-member', 'familyMembers', 'اعضای خانواده (اختیاری)', 'افزودن عضو جدید', 'id', 'name');
+            if (addNewProjectBtn) addNewProjectBtn.onclick = () => showAddItemModal('project', 'transaction-project', 'projects', 'پروژه (اختیاری)', 'افزودن پروژه جدید', 'id', 'name');
+            if (addNewEventBtn) addNewEventBtn.onclick = () => showAddItemModal('event', 'transaction-event', 'events', 'رویداد (اختیاری)', 'افزودن رویداد جدید', 'id', 'name');
+        }
+
+        /**
+         * Updates the list of transactions displayed in the UI.
+         */
+        function updateTransactionList() {
+            const transactionListDiv = document.getElementById('transaction-list');
+            if (!transactionListDiv) return;
+
+            if (transactions.length === 0) {
+                transactionListDiv.innerHTML = '<p class="text-gray-500 text-center py-4">هیچ تراکنشی یافت نشد.</p>';
+                return;
+            }
+
+            const sortedTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            transactionListDiv.innerHTML = `
+                <ul class="divide-y divide-gray-200">
+                    ${sortedTransactions.map(t => {
+                        const associatedAccount = accounts.find(acc => acc.id === t.accountId);
+                        const accountName = associatedAccount ? associatedAccount.name : 'حساب نامشخص';
+                        return `
+                        <li class="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                            <div class="flex-grow mb-2 sm:mb-0">
+                                <p class="font-medium text-gray-900">${t.description} ${t.category ? `<span class="text-xs text-gray-500">(${t.category})</span>` : ''}</p>
+                                <p class="text-sm text-gray-500">${t.date.split('T')[0]}</p>
+                                <div class="text-xs text-gray-600 mt-1">
+                                    ${t.accountId ? `<span class="ml-2 rtl:mr-2">💳 ${accountName}</span>` : ''}
+                                    ${t.familyMember ? `<span class="ml-2 rtl:mr-2">🧑‍🤝‍🧑 ${t.familyMember}</span>` : ''}
+                                    ${t.project ? `<span class="ml-2 rtl:mr-2">📈 ${t.project}</span>` : ''}
+                                    ${t.event ? `<span>🗓️ ${t.event}</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="flex items-center mt-2 sm:mt-0">
+                                <span class="font-bold text-lg ${t.type === 'income' ? 'text-green-600' : 'text-red-600'} ml-4 rtl:mr-4">
+                                    ${t.type === 'income' ? '+' : '-'} ${toPersianDigits(parseFloat(t.amount || 0).toLocaleString('fa-IR'))} تومان
+                                </span>
+                                <button
+                                    data-id="${t.id}"
+                                    class="edit-btn p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors duration-200 ml-2 rtl:mr-2 hover:scale-105 transition-transform duration-300"
+                                    title="ویرایش"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                                </button>
+                                <button
+                                    data-id="${t.id}"
+                                    class="delete-btn p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors duration-200 hover:scale-105 transition-transform duration-300"
+                                    title="حذف"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                </button>
+                            </div>
+                        </li>
+                    `}).join('')}
+                </ul>
+            `;
+        }
+
+        /**
+         * Handles adding or updating a transaction.
+         */
+        function handleAddOrUpdateTransaction() {
+            const descriptionInput = document.getElementById('transaction-description');
+            const categoryInput = document.getElementById('transaction-category');
+            const amountInput = document.getElementById('transaction-amount');
+            const transactionDateInput = document.getElementById('transaction-date');
+            const typeExpenseRadio = document.getElementById('type-expense');
+            const accountSelect = document.getElementById('transaction-account');
+            const familyMemberSelect = document.getElementById('transaction-family-member');
+            const projectSelect = document.getElementById('transaction-project');
+            const eventSelect = document.getElementById('transaction-event');
+
+
+            const description = descriptionInput.value.trim();
+            const category = categoryInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            // date is now directly from the input type="date"
+            const date = transactionDateInput.value; 
+            const type = typeExpenseRadio.checked ? 'expense' : 'income';
+            const accountId = accountSelect.value;
+            const familyMember = familyMemberSelect.value;
+            const project = projectSelect.value;
+            const event = eventSelect.value;
+
+
+            if (!description || isNaN(amount) || amount <= 0 || !date || !accountId) {
+                showToast('لطفاً توضیحات، مبلغ، تاریخ و حساب معتبر وارد کنید.', 'error');
+                return;
+            }
+
+            let oldAmount = 0;
+            let oldAccountId = null;
+            if (currentEditingTransactionId) {
+                const oldTransaction = transactions.find(t => t.id === currentEditingTransactionId);
+                if (oldTransaction) {
+                    oldAmount = oldTransaction.amount;
+                    oldAccountId = oldTransaction.accountId;
+                }
+            }
+
+
+            if (currentEditingTransactionId) {
+                transactions = transactions.map(t =>
+                    t.id === currentEditingTransactionId
+                        ? { ...t, description, category, amount, type, date: date + 'T00:00:00.000Z', accountId, familyMember, project, event }
+                        : t
+                );
+                showToast('تراکنش با موفقیت ویرایش شد.', 'success');
+            } else {
+                const newTransaction = {
+                    id: Date.now().toString(),
+                    description,
+                    category,
+                    amount,
+                    type,
+                    date: date + 'T00:00:00.000Z',
+                    accountId,
+                    familyMember,
+                    project,
+                    event
+                };
+                transactions.unshift(newTransaction);
+                showToast('تراکنش با موفقیت اضافه شد.', 'success');
+            }
+
+            saveData('transactions', transactions);
+            recalculateAccountBalances();
+            closeTransactionModal();
+            updateTransactionList();
+            renderDashboard();
+        }
+
+        /**
+         * Fills the transaction form for editing.
+         * @param {Object} transaction - The transaction object to edit.
+         */
+        function fillFormForEdit(transaction) {
+            document.getElementById('transaction-form-title').textContent = 'ویرایش تراکنش';
+            document.getElementById('transaction-description').value = transaction.description;
+            document.getElementById('transaction-category').value = transaction.category || '';
+            document.getElementById('transaction-amount').value = transaction.amount;
+
+            // Date is now directly set in YYYY-MM-DD format
+            document.getElementById('transaction-date').value = transaction.date.split('T')[0];
+
+            if (transaction.type === 'expense') {
+                document.getElementById('type-expense').checked = true;
+            } else {
+                document.getElementById('type-income').checked = true;
+            }
+
+            document.getElementById('transaction-account').value = transaction.accountId || '';
+            document.getElementById('transaction-family-member').value = transaction.familyMember || '';
+            document.getElementById('transaction-project').value = transaction.project || '';
+            document.getElementById('transaction-event').value = transaction.event || '';
+
+            document.getElementById('add-update-transaction-btn').textContent = 'ویرایش تراکنش';
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            currentEditingTransactionId = transaction.id;
+        }
+
+        /**
+         * Handles the edit action for a transaction.
+         * @param {string} id - The ID of the transaction to edit.
+         */
+        function handleEditTransaction(id) {
+            const transactionToEdit = transactions.find(t => t.id === id);
+            if (transactionToEdit) {
+                showTransactionModal(transactionToEdit);
+            }
+        }
+
+        /**
+         * Handles the delete action for a transaction.
+         * @param {string} id - The ID of the transaction to delete.
+         */
+        function handleDeleteTransaction(id) {
+            showModal('آیا مطمئن هستید که می‌خواهید این تراکنش را حذف کنید؟', () => {
+                transactions = transactions.filter(t => t.id !== id);
+                saveData('transactions', transactions);
+                recalculateAccountBalances();
+                updateTransactionList();
+                renderDashboard();
+                showToast('تراکنش با موفقیت حذف شد.', 'success');
+            });
+        }
+
+        /**
+         * Resets the transaction form and clears editing state.
+         */
+        function resetTransactionForm() {
+            document.getElementById('transaction-form-title').textContent = 'افزودن تراکنش جدید';
+            document.getElementById('transaction-description').value = '';
+            document.getElementById('transaction-category').value = '';
+            document.getElementById('transaction-amount').value = '';
+            // Set today's date in YYYY-MM-DD format for default
+            document.getElementById('transaction-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('type-expense').checked = true;
+            
+            document.getElementById('transaction-account').value = '';
+            document.getElementById('transaction-family-member').value = '';
+            document.getElementById('transaction-project').value = '';
+            document.getElementById('transaction-event').value = '';
+
+            document.getElementById('add-update-transaction-btn').textContent = 'افزودن تراکنش';
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            currentEditingTransactionId = null;
+        }
+
+        /**
+         * Cancels the current transaction edit operation.
+         */
+        function cancelEditTransaction() {
+            closeTransactionModal();
+        }
+
+        // --- Budgets Component Functions ---
+        function renderBudgets() {
+            const content = `
+                <div class="space-y-6">
+                    <h2 class="text-3xl font-extrabold text-center text-blue-700 mb-6">مدیریت بودجه‌ها</h2>
+
+                    <!-- Add/Edit Budget Form -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 id="budget-form-title" class="text-xl font-semibold text-gray-700 mb-4">ایجاد بودجه جدید</h3>
+                        <div class="flex flex-col space-y-4">
+                            <input
+                                type="text"
+                                id="budget-name"
+                                placeholder="نام بودجه (مثال: بودجه ماهانه غذا)"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style="text-align: right;"
+                            />
+                            <input
+                                type="number"
+                                id="budget-amount"
+                                placeholder="مبلغ بودجه (مثال: ۱۰۰۰۰۰۰)"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style="text-align: right;"
+                            />
+                            <select
+                                id="budget-period"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="monthly">ماهانه</option>
+                                <option value="weekly">هفتگی</option>
+                                <option value="yearly">سالانه</option>
+                                <option value="once">یکبار</option>
+                            </select>
+                            <button
+                                id="add-update-budget-btn"
+                                class="p-3 rounded-lg text-lg text-white font-bold transition-transform duration-300 bg-blue-600 hover:bg-blue-700 hover:scale-105"
+                            >
+                                ایجاد بودجه
+                            </button>
+                            <button
+                                id="cancel-edit-budget-btn"
+                                class="p-3 rounded-lg text-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 hover:scale-105 transition-transform duration-300 hidden"
+                            >
+                                لغو ویرایش
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Budget List -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wallet ml-2 rtl:mr-2"/><path d="M19 7V4a1 2 0 0 0-1-1H5a2 2 0 0 0 0 4h12a2 2 0 0 1 0 4H5a2 2 0 0 0 0 4h12c.74 0 1.42.29 1.9.86a2.1 2 0 0 0 .17 2.94"/> <path d="M18.7 17.3c-.47.57-1.15.86-1.9.86H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v11a2.1 2 0 0 1-.17.94Z"/></svg>
+                            لیست بودجه‌ها
+                        </h3>
+                        <div id="budget-list">
+                            <!-- Budgets will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+            addBudgetEventListeners();
+            updateBudgetList();
+            if (currentEditingBudgetId) {
+                const budgetToEdit = budgets.find(b => b.id === currentEditingBudgetId);
+                if (budgetToEdit) {
+                    fillBudgetFormForEdit(budgetToEdit);
+                }
+            }
+        }
+
+        function addBudgetEventListeners() {
+            const addUpdateBtn = document.getElementById('add-update-budget-btn');
+            const cancelEditBtn = document.getElementById('cancel-edit-budget-btn');
+
+            if (addUpdateBtn) addUpdateBtn.onclick = handleAddOrUpdateBudget;
+            if (cancelEditBtn) cancelEditBtn.onclick = cancelEditBudget;
+
+            document.getElementById('budget-list').addEventListener('click', (event) => {
+                const target = event.target.closest('button');
+                if (!target) return;
+
+                const budgetId = target.dataset.id;
+                if (target.classList.contains('edit-btn')) {
+                    handleEditBudget(budgetId);
+                } else if (target.classList.contains('delete-btn')) {
+                    handleDeleteBudget(budgetId);
+                }
+            });
+        }
+
+        function updateBudgetList() {
+            const budgetListDiv = document.getElementById('budget-list');
+            if (!budgetListDiv) return;
+
+            if (budgets.length === 0) {
+                budgetListDiv.innerHTML = '<p class="text-gray-500 text-center py-4">هنوز بودجه‌ای ثبت نشده است.</p>';
+                return;
+            }
+
+            budgetListDiv.innerHTML = `
+                <ul class="divide-y divide-gray-200">
+                    ${budgets.map(b => {
+                        const relevantTransactions = transactions.filter(t => {
+                            const tDate = new Date(t.date);
+                            const budgetCreationDate = new Date(b.createdAt);
+                            return t.type === 'expense' && tDate >= budgetCreationDate;
+                        });
+                        const spentAmount = relevantTransactions.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+                        const remaining = b.amount - spentAmount;
+                        const progress = (spentAmount / b.amount) * 100;
+                        const progressBarColor = progress > 100 ? 'bg-red-500' : 'bg-blue-500';
+
+                        return `
+                            <li class="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                                <div class="flex-grow mb-2 sm:mb-0">
+                                    <p class="font-medium text-gray-900">${b.name}</p>
+                                    <p class="text-sm text-gray-500">مبلغ: ${toPersianDigits(b.amount.toLocaleString('fa-IR'))} تومان (${b.period === 'monthly' ? 'ماهانه' : b.period === 'weekly' ? 'هفتگی' : b.period === 'yearly' ? 'سالانه' : 'یکبار'})</p>
+                                    <p class="text-sm text-gray-500">خرج شده: ${toPersianDigits(spentAmount.toLocaleString('fa-IR'))} تومان</p>
+                                    <p class="text-sm font-semibold ${remaining < 0 ? 'text-red-600' : 'text-green-600'}">باقیمانده: ${toPersianDigits(remaining.toLocaleString('fa-IR'))} تومان</p>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                                        <div class="h-2.5 rounded-full ${progressBarColor}" style="width: ${Math.min(100, progress)}%;"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center mt-2 sm:mt-0">
+                                    <button
+                                        data-id="${b.id}"
+                                        class="edit-btn p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors duration-200 ml-2 rtl:mr-2 hover:scale-105 transition-transform duration-300"
+                                        title="ویرایش"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                                    </button>
+                                    <button
+                                        data-id="${b.id}"
+                                        class="delete-btn p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors duration-200 hover:scale-105 transition-transform duration-300"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                    </button>
+                                </div>
+                            </li>
+                        `;
+                    }).join('')}
+                </ul>
+            `;
+        }
+
+        function handleAddOrUpdateBudget() {
+            const nameInput = document.getElementById('budget-name');
+            const amountInput = document.getElementById('budget-amount');
+            const periodSelect = document.getElementById('budget-period');
+
+            const name = nameInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const period = periodSelect.value;
+
+            if (!name || isNaN(amount) || amount <= 0) {
+                showToast('لطفاً نام، مبلغ معتبر و مثبت برای بودجه وارد کنید.', 'error');
+                return;
+            }
+
+            if (currentEditingBudgetId) {
+                budgets = budgets.map(b =>
+                    b.id === currentEditingBudgetId
+                        ? { ...b, name, amount, period }
+                        : b
+                );
+                showToast('بودجه با موفقیت ویرایش شد.', 'success');
+            } else {
+                const newBudget = {
+                    id: Date.now().toString(),
+                    name,
+                    amount,
+                    period,
+                    createdAt: new Date().toISOString()
+                };
+                budgets.push(newBudget);
+                showToast('بودجه با موفقیت اضافه شد.', 'success');
+            }
+
+            saveData('budgets', budgets);
+            resetBudgetForm();
+            updateBudgetList();
+            renderDashboard();
+        }
+
+        function fillBudgetFormForEdit(budget) {
+            document.getElementById('budget-form-title').textContent = 'ویرایش بودجه';
+            document.getElementById('budget-name').value = budget.name;
+            document.getElementById('budget-amount').value = budget.amount;
+            document.getElementById('budget-period').value = budget.period;
+            document.getElementById('add-update-budget-btn').textContent = 'ویرایش بودجه';
+            document.getElementById('cancel-edit-budget-btn').classList.remove('hidden');
+            currentEditingBudgetId = budget.id;
+        }
+
+        function handleEditBudget(id) {
+            const budgetToEdit = budgets.find(b => b.id === id);
+            if (budgetToEdit) {
+                fillBudgetFormForEdit(budgetToEdit);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function handleDeleteBudget(id) {
+            showModal('آیا مطمئن هستید که می‌خواهید این بودجه را حذف کنید؟', () => {
+                budgets = budgets.filter(b => b.id !== id);
+                saveData('budgets', budgets);
+                updateBudgetList();
+                showToast('بودجه با موفقیت حذف شد.', 'success');
+            });
+        }
+
+        function resetBudgetForm() {
+            document.getElementById('budget-form-title').textContent = 'ایجاد بودجه جدید';
+            document.getElementById('budget-name').value = '';
+            document.getElementById('budget-amount').value = '';
+            document.getElementById('budget-period').value = 'monthly';
+            document.getElementById('add-update-budget-btn').textContent = 'ایجاد بودجه';
+            document.getElementById('cancel-edit-budget-btn').classList.add('hidden');
+            currentEditingBudgetId = null;
+        }
+
+        function cancelEditBudget() {
+            resetBudgetForm();
+        }
+
+        // --- Loans Component Functions ---
+        function renderLoans() {
+            const content = `
+                <div class="space-y-6">
+                    <h2 class="text-3xl font-extrabold text-center text-blue-700 mb-6">مدیریت وام‌ها و بدهی‌ها</h2>
+
+                    <!-- Add/Edit Loan Form -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 id="loan-form-title" class="text-xl font-semibold text-gray-700 mb-4">افزودن وام جدید</h3>
+                        <div class="flex flex-col space-y-4">
+                            <input
+                                type="text"
+                                id="loan-name"
+                                placeholder="نام وام (مثال: وام خرید خودرو)"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style="text-align: right;"
+                            />
+                            <input
+                                type="number"
+                                id="loan-principal"
+                                placeholder="مبلغ اصلی وام"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style="text-align: right;"
+                            />
+                            <input
+                                type="number"
+                                id="loan-interest-rate"
+                                placeholder="نرخ بهره سالانه (%)"
+                                step="0.01"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style="text-align: right;"
+                            />
+                            <input
+                                type="number"
+                                id="loan-term-months"
+                                placeholder="مدت بازپرداخت (ماه)"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style="text-align: right;"
+                            />
+                            <input
+                                type="date"
+                                id="loan-start-date"
+                                placeholder="تاریخ شروع (YYYY-MM-DD)"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style="text-align: right;"
+                            />
+                            <button
+                                id="add-update-loan-btn"
+                                class="p-3 rounded-lg text-lg text-white font-bold transition-transform duration-300 bg-blue-600 hover:bg-blue-700 hover:scale-105"
+                            >
+                                افزودن وام
+                            </button>
+                            <button
+                                id="cancel-edit-loan-btn"
+                                class="p-3 rounded-lg text-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 hover:scale-105 transition-transform duration-300 hidden"
+                            >
+                                لغو ویرایش
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Loan List -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-dollar-sign ml-2 rtl:mr-2"/><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4h-6"/><path d="M12 3v18"/></svg>
+                            لیست وام‌ها و بدهی‌ها
+                        </h3>
+                        <div id="loan-list">
+                            <!-- Loans will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+            addLoanEventListeners();
+            updateLoanList();
+            if (currentEditingLoanId) {
+                const loanToEdit = loans.find(l => l.id === currentEditingLoanId);
+                if (loanToEdit) {
+                    fillLoanFormForEdit(loanToEdit);
+                }
+            }
+        }
+
+        function addLoanEventListeners() {
+            const addUpdateBtn = document.getElementById('add-update-loan-btn');
+            const cancelEditBtn = document.getElementById('cancel-edit-loan-btn');
+            const loanStartDateInput = document.getElementById('loan-start-date');
+
+            if (addUpdateBtn) addUpdateBtn.onclick = handleAddOrUpdateLoan;
+            if (cancelEditBtn) cancelEditBtn.onclick = cancelEditLoan;
+
+            // Set default date for new loans
+            if (loanStartDateInput) {
+                loanStartDateInput.value = new Date().toISOString().split('T')[0];
+            }
+
+            document.getElementById('loan-list').addEventListener('click', (event) => {
+                const target = event.target.closest('button');
+                if (!target) return;
+
+                const loanId = target.dataset.id;
+                if (target.classList.contains('edit-btn')) {
+                    handleEditLoan(loanId);
+                } else if (target.classList.contains('delete-btn')) {
+                    handleDeleteLoan(loanId);
+                } else if (target.classList.contains('pay-btn')) {
+                    handlePayLoanInstallment(loanId);
+                }
+            });
+        }
+
+        function updateLoanList() {
+            const loanListDiv = document.getElementById('loan-list');
+            if (!loanListDiv) return;
+
+            if (loans.length === 0) {
+                loanListDiv.innerHTML = '<p class="text-gray-500 text-center py-4">هنوز وامی ثبت نشده است.</p>';
+                return;
+            }
+
+            loanListDiv.innerHTML = `
+                <ul class="divide-y divide-gray-200">
+                    ${loans.map(l => {
+                        const monthlyInterestRate = l.interestRate / 100 / 12;
+                        const numberOfPayments = l.termMonths;
+                        let monthlyPayment = 0;
+                        if (monthlyInterestRate === 0) {
+                            monthlyPayment = l.principal / numberOfPayments;
+                        } else {
+                            monthlyPayment = l.principal * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments)) / (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
+                        }
+                        const totalPaid = l.payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+                        const remainingPrincipal = l.principal - totalPaid;
+                        const statusColor = remainingPrincipal <= 0 ? 'text-green-600' : 'text-orange-600';
+
+                        return `
+                            <li class="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                                <div class="flex-grow mb-2 sm:mb-0">
+                                    <p class="font-medium text-gray-900">${l.name}</p>
+                                    <p class="text-sm text-gray-500">مبلغ اصلی: ${toPersianDigits(l.principal.toLocaleString('fa-IR'))} تومان</p>
+                                    <p class="text-sm text-gray-500">نرخ بهره: ${toPersianDigits(l.interestRate)}%</p>
+                                    <p class="text-sm text-gray-500">مدت: ${toPersianDigits(l.termMonths)} ماه</p>
+                                    <p class="text-sm text-gray-500">تاریخ شروع: ${l.startDate}</p>
+                                    <p class="text-sm text-gray-500">اقساط ماهانه تقریبی: ${toPersianDigits(monthlyPayment.toLocaleString('fa-IR'))} تومان</p>
+                                    <p class="text-sm font-semibold ${statusColor}">باقیمانده: ${toPersianDigits(Math.max(0, remainingPrincipal).toLocaleString('fa-IR'))} تومان</p>
+                                    ${remainingPrincipal > 0 ? `
+                                        <button data-id="${l.id}" class="pay-btn mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200 hover:scale-105 transition-transform duration-300">
+                                            پرداخت قسط
+                                        </button>
+                                    ` : `
+                                        <span class="mt-2 text-green-600 font-semibold">کامل پرداخت شده!</span>
+                                    `}
+                                </div>
+                                <div class="flex items-center mt-2 sm:mt-0">
+                                    <button
+                                        data-id="${l.id}"
+                                        class="edit-btn p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors duration-200 ml-2 rtl:mr-2 hover:scale-105 transition-transform duration-300"
+                                        title="ویرایش"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                                    </button>
+                                    <button
+                                        data-id="${l.id}"
+                                        class="delete-btn p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors duration-200 hover:scale-105 transition-transform duration-300"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                    </button>
+                                </div>
+                            </li>
+                        `;
+                    }).join('')}
+                </ul>
+            `;
+        }
+
+        function handleAddOrUpdateLoan() {
+            const nameInput = document.getElementById('loan-name');
+            const principalInput = document.getElementById('loan-principal');
+            const interestRateInput = document.getElementById('loan-interest-rate');
+            const termMonthsInput = document.getElementById('loan-term-months');
+            const startDateInput = document.getElementById('loan-start-date');
+
+            const name = nameInput.value.trim();
+            const principal = parseFloat(principalInput.value);
+            const interestRate = parseFloat(interestRateInput.value);
+            const termMonths = parseInt(termMonthsInput.value);
+            const startDate = startDateInput.value; // Directly get from input
+
+            if (!name || isNaN(principal) || principal <= 0 || isNaN(interestRate) || isNaN(termMonths) || termMonths <= 0 || !startDate) {
+                showToast('لطفاً تمام فیلدهای وام را به درستی وارد کنید.', 'error');
+                return;
+            }
+
+            if (currentEditingLoanId) {
+                loans = loans.map(l =>
+                    l.id === currentEditingLoanId
+                        ? { ...l, name, principal, interestRate, termMonths, startDate }
+                        : l
+                );
+                showToast('وام با موفقیت ویرایش شد.', 'success');
+            } else {
+                const newLoan = {
+                    id: Date.now().toString(),
+                    name,
+                    principal,
+                    interestRate,
+                    termMonths,
+                    startDate,
+                    payments: []
+                };
+                loans.push(newLoan);
+                showToast('وام با موفقیت اضافه شد.', 'success');
+            }
+
+            saveData('loans', loans);
+            resetLoanForm();
+            updateLoanList();
+        }
+
+        function fillLoanFormForEdit(loan) {
+            document.getElementById('loan-form-title').textContent = 'ویرایش وام';
+            document.getElementById('loan-name').value = loan.name;
+            document.getElementById('loan-principal').value = loan.principal;
+            document.getElementById('loan-interest-rate').value = loan.interestRate;
+            document.getElementById('loan-term-months').value = loan.termMonths;
+            
+            document.getElementById('loan-start-date').value = loan.startDate; // Directly set from saved data
+
+            document.getElementById('add-update-loan-btn').textContent = 'ویرایش وام';
+            document.getElementById('cancel-edit-loan-btn').classList.remove('hidden');
+            currentEditingLoanId = loan.id;
+        }
+
+        function handleEditLoan(id) {
+            const loanToEdit = loans.find(l => l.id === id);
+            if (loanToEdit) {
+                fillLoanFormForEdit(loanToEdit);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function handleDeleteLoan(id) {
+            showModal('آیا مطمئن هستید که می‌خواهید این وام را حذف کنید؟', () => {
+                loans = loans.filter(l => l.id !== id);
+                saveData('loans', loans);
+                updateLoanList();
+                showToast('وام با موفقیت حذف شد.', 'success');
+            });
+        }
+
+        function handlePayLoanInstallment(id) {
+            const loan = loans.find(l => l.id === id);
+            if (!loan) return;
+
+            const monthlyInterestRate = loan.interestRate / 100 / 12;
+            const numberOfPayments = loan.termMonths;
+            let monthlyPayment = 0;
+            if (monthlyInterestRate === 0) {
+                monthlyPayment = loan.principal / numberOfPayments;
+            } else {
+                monthlyPayment = loan.principal * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments)) / (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
+            }
+
+            showModal(`آیا میخواهید قسط ${toPersianDigits(monthlyPayment.toLocaleString('fa-IR'))} تومانی این وام را پرداخت کنید؟ این عمل یک تراکنش هزینه ایجاد خواهد کرد.`, () => {
+                const paymentAmount = monthlyPayment;
+
+                loan.payments.push({ amount: paymentAmount, date: new Date().toISOString() });
+                saveData('loans', loans);
+                updateLoanList();
+                transactions.unshift({
+                    id: Date.now().toString(),
+                    description: `پرداخت قسط وام: ${loan.name}`,
+                    category: 'وام/بدهی',
+                    amount: paymentAmount,
+                    type: 'expense',
+                    accountId: accounts.find(acc => acc.name === 'نقدی')?.id || (accounts.length > 0 ? accounts[0].id : null),
+                    date: new Date().toISOString()
+                });
+                saveData('transactions', transactions);
+                recalculateAccountBalances();
+                renderDashboard();
+                showToast('قسط با موفقیت پرداخت شد.', 'success');
+            });
+        }
+
+        function resetLoanForm() {
+            document.getElementById('loan-form-title').textContent = 'افزودن وام جدید';
+            document.getElementById('loan-name').value = '';
+            document.getElementById('loan-principal').value = '';
+            document.getElementById('loan-interest-rate').value = '';
+            document.getElementById('loan-term-months').value = '';
+            
+            document.getElementById('loan-start-date').value = new Date().toISOString().split('T')[0]; // Set default
+
+            document.getElementById('add-update-loan-btn').textContent = 'افزودن وام';
+            document.getElementById('cancel-edit-loan-btn').classList.add('hidden');
+            currentEditingLoanId = null;
+        }
+
+        function cancelEditLoan() {
+            resetLoanForm();
+        }
+
+        // --- Checks Component Functions ---
+        function renderChecks() {
+            const content = `
+                <div class="space-y-6">
+                    <h2 class="text-3xl font-extrabold text-center text-blue-700 mb-6">مدیریت چک‌ها</h2>
+
+                    <!-- Add/Edit Check Form -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 id="check-form-title" class="text-xl font-semibold text-gray-700 mb-4">افزودن چک جدید</h3>
+                        <div class="flex flex-col space-y-4">
+                            <input
+                                type="text"
+                                id="check-payee"
+                                placeholder="دریافت‌کننده/صادرکننده (مثال: آقای احمدی)"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style="text-align: right;"
+                            />
+                            <input
+                                type="number"
+                                id="check-amount"
+                                placeholder="مبلغ چک"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style="text-align: right;"
+                            />
+                            <label for="check-issue-date" class="block text-sm font-medium text-gray-700">تاریخ صدور:</label>
+                            <input
+                                type="date"
+                                id="check-issue-date"
+                                placeholder="تاریخ صدور (YYYY-MM-DD)"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style="text-align: right;"
+                            />
+                            <label for="check-due-date" class="block text-sm font-medium text-gray-700">تاریخ سررسید:</label>
+                            <input
+                                type="date"
+                                id="check-due-date"
+                                placeholder="تاریخ سررسید (YYYY-MM-DD)"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                style="text-align: right;"
+                            />
+                            <select
+                                id="check-status"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="pending">در انتظار</option>
+                                <option value="cleared">پاس شده</option>
+                                <option value="bounced">برگشت خورده</option>
+                                <option value="cancelled">باطل شده</option>
+                            </select>
+                            <textarea
+                                id="check-notes"
+                                placeholder="توضیحات/شماره چک"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                                rows="2"
+                                style="text-align: right;"
+                            ></textarea>
+                            <button
+                                id="add-update-check-btn"
+                                class="p-3 rounded-lg text-lg text-white font-bold transition-transform duration-300 bg-blue-600 hover:bg-blue-700 hover:scale-105"
+                            >
+                                افزودن چک
+                            </button>
+                            <button
+                                id="cancel-edit-check-btn"
+                                class="p-3 rounded-lg text-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 hover:scale-105 transition-transform duration-300 hidden"
+                            >
+                                لغو ویرایش
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Check List -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-receipt-text ml-2 rtl:mr-2"/><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M18 16H8"/></svg>
+                            لیست چک‌ها
+                        </h3>
+                        <div id="check-list">
+                            <!-- Checks will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+            addCheckEventListeners();
+            updateCheckList();
+            if (currentEditingCheckId) {
+                const checkToEdit = checks.find(c => c.id === currentEditingCheckId);
+                if (checkToEdit) {
+                    fillCheckFormForEdit(checkToEdit);
+                }
+            }
+        }
+
+        function addCheckEventListeners() {
+            const addUpdateBtn = document.getElementById('add-update-check-btn');
+            const cancelEditBtn = document.getElementById('cancel-edit-check-btn');
+            const issueDateInput = document.getElementById('check-issue-date');
+            const dueDateInput = document.getElementById('check-due-date');
+
+            if (addUpdateBtn) addUpdateBtn.onclick = handleAddOrUpdateCheck;
+            if (cancelEditBtn) cancelEditBtn.onclick = cancelEditCheck;
+
+            // Set default dates for new checks
+            if (issueDateInput) {
+                issueDateInput.value = new Date().toISOString().split('T')[0];
+            }
+            if (dueDateInput) {
+                dueDateInput.value = new Date().toISOString().split('T')[0];
+            }
+
+            document.getElementById('check-list').addEventListener('click', (event) => {
+                const target = event.target.closest('button');
+                if (!target) return;
+
+                const checkId = target.dataset.id;
+                if (target.classList.contains('edit-btn')) {
+                    handleEditCheck(checkId);
+                } else if (target.classList.contains('delete-btn')) {
+                    handleDeleteCheck(checkId);
+                } else if (target.classList.contains('clear-check-btn')) {
+                    handleClearCheck(checkId);
+                }
+            });
+        }
+
+        function updateCheckList() {
+            const checkListDiv = document.getElementById('check-list');
+            if (!checkListDiv) return;
+
+            if (checks.length === 0) {
+                checkListDiv.innerHTML = '<p class="text-gray-500 text-center py-4">هنوز چکی ثبت نشده است.</p>';
+                return;
+            }
+
+            const sortedChecks = [...checks].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+            const statusMap = {
+                'pending': 'در انتظار',
+                'cleared': 'پاس شده',
+                'bounced': 'برگشت خورده',
+                'cancelled': 'باطل شده'
+            };
+            const statusColorMap = {
+                'pending': 'text-orange-600',
+                'cleared': 'text-green-600',
+                'bounced': 'text-red-600',
+                'cancelled': 'text-gray-500'
+            };
+
+            checkListDiv.innerHTML = `
+                <ul class="divide-y divide-gray-200">
+                    ${sortedChecks.map(c => `
+                        <li class="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                            <div class="flex-grow mb-2 sm:mb-0">
+                                <p class="font-medium text-gray-900">به: ${c.payee} - مبلغ: ${toPersianDigits(parseFloat(c.amount || 0).toLocaleString('fa-IR'))} تومان</p>
+                                <p class="text-sm text-gray-500">تاریخ صدور: ${c.issueDate}</p>
+                                <p class="text-sm text-gray-500">تاریخ سررسید: ${c.dueDate}</p>
+                                <p class="text-sm font-semibold ${statusColorMap[c.status]}">وضعیت: ${statusMap[c.status]}</p>
+                                ${c.notes ? `<p class="text-xs text-gray-500">توضیحات: ${c.notes}</p>` : ''}
+                                ${c.status === 'pending' ? `
+                                    <button data-id="${c.id}" class="clear-check-btn mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-200 hover:scale-105 transition-transform duration-300">
+                                        پاس کردن چک
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <div class="flex items-center mt-2 sm:mt-0">
+                                <button
+                                    data-id="${c.id}"
+                                    class="edit-btn p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors duration-200 ml-2 rtl:mr-2 hover:scale-105 transition-transform duration-300"
+                                    title="ویرایش"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                                </button>
+                                <button
+                                    data-id="${c.id}"
+                                    class="delete-btn p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors duration-200 hover:scale-105 transition-transform duration-300"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                </button>
+                            </div>
+                        </li>
+                    `).join('')}
+                </ul>
+            `;
+        }
+
+        function handleAddOrUpdateCheck() {
+            const payeeInput = document.getElementById('check-payee');
+            const amountInput = document.getElementById('check-amount');
+            const issueDateInput = document.getElementById('check-issue-date');
+            const dueDateInput = document.getElementById('check-due-date');
+            const statusSelect = document.getElementById('check-status');
+            const notesInput = document.getElementById('check-notes');
+
+            const payee = payeeInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const issueDate = issueDateInput.value; // Directly get from input
+            const dueDate = dueDateInput.value;     // Directly get from input
+            const status = statusSelect.value;
+            const notes = notesInput.value.trim();
+
+            if (!payee || isNaN(amount) || amount <= 0 || !issueDate || !dueDate) {
+                showToast('لطفاً تمام فیلدهای اصلی چک را به درستی وارد کنید.', 'error');
+                return;
+            }
+
+            if (currentEditingCheckId) {
+                checks = checks.map(c =>
+                    c.id === currentEditingCheckId
+                        ? { ...c, payee, amount, issueDate, dueDate, status, notes }
+                        : c
+                );
+                showToast('چک با موفقیت ویرایش شد.', 'success');
+            } else {
+                const newCheck = {
+                    id: Date.now().toString(),
+                    payee,
+                    amount,
+                    issueDate,
+                    dueDate,
+                    status,
+                    notes,
+                    createdAt: new Date().toISOString()
+                };
+                checks.unshift(newCheck);
+                showToast('چک با موفقیت اضافه شد.', 'success');
+            }
+
+            saveData('checks', checks);
+            resetCheckForm();
+            updateCheckList();
+            renderDashboard();
+        }
+
+        function fillCheckFormForEdit(check) {
+            document.getElementById('check-form-title').textContent = 'ویرایش چک';
+            document.getElementById('check-payee').value = check.payee;
+            document.getElementById('check-amount').value = check.amount;
+            
+            document.getElementById('check-issue-date').value = check.issueDate; // Directly set from saved data
+            document.getElementById('check-due-date').value = check.dueDate;     // Directly set from saved data
+
+            document.getElementById('check-status').value = check.status;
+            document.getElementById('check-notes').value = check.notes;
+            document.getElementById('add-update-check-btn').textContent = 'ویرایش چک';
+            document.getElementById('cancel-edit-check-btn').classList.remove('hidden');
+            currentEditingCheckId = check.id;
+        }
+
+        function handleEditCheck(id) {
+            const checkToEdit = checks.find(c => c.id === id);
+            if (checkToEdit) {
+                fillCheckFormForEdit(checkToEdit);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function handleDeleteCheck(id) {
+            showModal('آیا مطمئن هستید که می‌خواهید این چک را حذف کنید؟', () => {
+                checks = checks.filter(c => c.id !== id);
+                saveData('checks', checks);
+                updateCheckList();
+                showToast('چک با موفقیت حذف شد.', 'success');
+            });
+        }
+
+        function handleClearCheck(id) {
+            const check = checks.find(c => c.id === id);
+            if (!check) return;
+
+            showModal(`آیا مطمئن هستید که چک "${check.payee}" به مبلغ ${toPersianDigits(check.amount.toLocaleString('fa-IR'))} تومان را پاس می‌کنید؟ این عمل یک تراکنش هزینه ایجاد خواهد کند.`, () => {
+                check.status = 'cleared';
+                saveData('checks', checks);
+                updateCheckList();
+
+                transactions.unshift({
+                    id: Date.now().toString(),
+                    description: `پاس شدن چک: ${check.payee}`,
+                    category: 'چک',
+                    amount: check.amount,
+                    type: 'expense',
+                    accountId: accounts.find(acc => acc.name === 'نقدی')?.id || (accounts.length > 0 ? accounts[0].id : null),
+                    date: new Date().toISOString()
+                });
+                saveData('transactions', transactions);
+                recalculateAccountBalances();
+                renderDashboard();
+                showToast('چک با موفقیت پاس و تراکنش آن ثبت شد.', 'success');
+            });
+        }
+
+        function resetCheckForm() {
+            document.getElementById('check-form-title').textContent = 'افزودن چک جدید';
+            document.getElementById('check-payee').value = '';
+            document.getElementById('check-amount').value = '';
+            
+            document.getElementById('check-issue-date').value = new Date().toISOString().split('T')[0]; // Set default
+            document.getElementById('check-due-date').value = new Date().toISOString().split('T')[0];     // Set default
+
+            document.getElementById('check-status').value = 'pending';
+            document.getElementById('check-notes').value = '';
+            document.getElementById('add-update-check-btn').textContent = 'افزودن چک';
+            document.getElementById('cancel-edit-check-btn').classList.add('hidden');
+            currentEditingCheckId = null;
+        }
+
+        function cancelEditCheck() {
+            resetCheckForm();
+        }
+
+        // --- Reports Component Functions ---
+        let expenseChart = null;
+
+        function renderReports() {
+            const content = `
+                <div class="space-y-6">
+                    <h2 class="text-3xl font-extrabold text-center text-blue-700 mb-6">گزارشات مالی</h2>
+
+                    <!-- Monthly Summary Report -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart ml-2 rtl:mr-2"/><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>
+                            خلاصه ماهانه درآمد و هزینه
+                        </h3>
+                        <div id="monthly-report">
+                            <!-- Monthly report will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Expense Category Chart -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pie-chart ml-2 rtl:mr-2"/><path d="M4.2 4.2A10 10 0 0 1 18 10h-6V4.2"/><path d="M12 18V6a6 6 0 0 0-4.2-5.8"/><path d="M12 18h.01"/><path d="M12 12v6h5.8A10 10 0 0 0 12 12Z"/></svg>
+                            نمودار هزینه‌ها بر اساس دسته‌بندی
+                        </h3>
+                        <div class="relative w-full max-w-sm mx-auto">
+                            <canvas id="expenseCategoryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Backup and Restore Section -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save ml-2 rtl:mr-2"/><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            پشتیبان‌گیری و بازیابی
+                        </h3>
+                        <div class="flex flex-col space-y-3">
+                            <button id="backup-data-btn" class="p-3 rounded-lg text-white font-bold text-lg transition-colors duration-300 bg-emerald-600 hover:bg-emerald-700 hover:scale-105">
+                                ایجاد فایل پشتیبان
+                            </button>
+                            <div class="flex flex-col space-y-2">
+                                <label for="restore-file-input" class="text-sm font-medium text-gray-700">انتخاب فایل پشتیبان:</label>
+                                <input type="file" id="restore-file-input" accept=".json" class="p-2 border border-gray-300 rounded-lg">
+                                <button id="restore-data-btn" class="p-3 rounded-lg text-white font-bold text-lg transition-colors duration-300 bg-orange-600 hover:bg-orange-700 hover:scale-105">
+                                    بازیابی از فایل پشتیبان
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Other Reports (Placeholder) -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-area-chart ml-2 rtl:mr-2"/><path d="M3 3v18h18"/><path d="M7 12v5h12l-3-3-4 4-3-3-2 2Z"/></svg>
+                            گزارشات دیگر (در حال توسعه)
+                        </h3>
+                        <p class="text-gray-500 text-center py-4">اینجا می‌توانید گزارشات پیشرفته‌تری مانند گزارش دسته‌بندی یا گزارش زمانی را مشاهده کنید.</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+            updateMonthlyReport();
+            renderExpenseCategoryChart();
+            document.getElementById('backup-data-btn').onclick = createBackup;
+            document.getElementById('restore-data-btn').onclick = restoreBackup;
+        }
+
+        /**
+         * Renders a pie chart of expenses by category.
+         */
+        function renderExpenseCategoryChart() {
+            const ctx = document.getElementById('expenseCategoryChart');
+            if (!ctx) return;
+
+            if (expenseChart) {
+                expenseChart.destroy();
+            }
+
+            const expenseCategories = {};
+            transactions.filter(t => t.type === 'expense').forEach(t => {
+                const category = t.category || 'متفرقه';
+                expenseCategories[category] = (expenseCategories[category] || 0) + parseFloat(t.amount || 0);
+            });
+
+            const labels = Object.keys(expenseCategories);
+            const data = Object.values(expenseCategories);
+
+            const backgroundColors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+                '#2ecc71', '#e74c3c', '#3498db', '#f1c40f', '#9b59b6', '#1abc9c'
+            ];
+            const dynamicColors = labels.map((_, i) => backgroundColors[i % backgroundColors.length]);
+
+            expenseChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels.map(label => toPersianDigits(label)),
+                    datasets: [{
+                        data: data,
+                        backgroundColor: dynamicColors,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: 'Vazirmatn'
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: toPersianDigits('توزیع هزینه‌ها بر اساس دسته‌بندی'),
+                            font: {
+                                family: 'Vazirmatn',
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed) {
+                                        label += toPersianDigits(context.parsed.toLocaleString('fa-IR')) + ' تومان';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        /**
+         * Creates a backup JSON file of all application data.
+         */
+        function createBackup() {
+            const backupData = {
+                transactions: transactions,
+                budgets: budgets,
+                loans: loans,
+                checks: checks,
+                tasksNotes: tasksNotes,
+                familyMembers: familyMembers,
+                projects: projects,
+                events: events,
+                accounts: accounts
+            };
+
+            const dataStr = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const fileNameDate = `${year}-${month}-${day}`;
+            a.download = `حسابداری_شخصی_پشتیبان_${toPersianDigits(fileNameDate)}.json`;
+            
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('فایل پشتیبان با موفقیت ایجاد شد.', 'success');
+        }
+
+        /**
+         * Restores application data from a selected JSON backup file.
+         */
+        function restoreBackup() {
+            const fileInput = document.getElementById('restore-file-input');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showToast('لطفاً یک فایل پشتیبان برای بازیابی انتخاب کنید.', 'error');
+                return;
+            }
+
+            showModal('آیا مطمئن هستید؟ بازیابی تمام داده‌های فعلی شما را بازنویسی خواهد کرد.', () => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const parsedData = JSON.parse(e.target.result);
+
+                        if (parsedData.transactions && parsedData.budgets && parsedData.accounts) {
+                            transactions = parsedData.transactions || [];
+                            budgets = parsedData.budgets || [];
+                            loans = parsedData.loans || [];
+                            checks = parsedData.checks || [];
+                            tasksNotes = parsedData.tasksNotes || [];
+                            familyMembers = parsedData.familyMembers || ['خودم', 'همسر', 'فرزند'];
+                            projects = parsedData.projects || ['شخصی', 'کاری', 'پروژه خانه'];
+                            events = parsedData.events || ['خرید روزانه', 'سفر', 'تعمیرات'];
+                            accounts = parsedData.accounts || [{ id: 'acc-default', name: 'نقدی', balance: 0, type: 'cash' }];
+
+                            saveData('transactions', transactions);
+                            saveData('budgets', budgets);
+                            saveData('loans', loans);
+                            saveData('checks', checks);
+                            saveData('tasksNotes', tasksNotes);
+                            saveData('familyMembers', familyMembers);
+                            saveData('projects', projects);
+                            saveData('events', events);
+                            saveData('accounts', accounts);
+
+                            recalculateAccountBalances();
+                            switchTab('dashboard');
+                            showToast('داده‌ها با موفقیت بازیابی شدند.', 'success');
+                                fileInput.value = '';
+                        } else {
+                            showToast('فایل انتخاب شده یک فایل پشتیبان معتبر نیست.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error parsing backup file:', error);
+                        showToast('خطا در خواندن یا تحلیل فایل پشتیبان. لطفاً مطمئن شوید که فایل JSON معتبر است.', 'error');
+                    }
+                };
+                reader.onerror = () => {
+                    showToast('خطا در خواندن فایل پشتیبان.', 'error');
+                };
+                reader.readAsText(file);
+            });
+        }
+
+
+        // --- Tasks/Notes Component Functions ---
+        function renderTasksNotes() {
+            const content = `
+                <div class="space-y-6">
+                    <h2 class="text-3xl font-extrabold text-center text-blue-700 mb-6">وظایف و یادداشت‌ها</h2>
+
+                    <!-- Add/Edit Task/Note Form -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 id="task-note-form-title" class="text-xl font-semibold text-gray-700 mb-4">افزودن وظیفه/یادداشت جدید</h3>
+                        <div class="flex flex-col space-y-4">
+                            <textarea
+                                id="task-note-description"
+                                placeholder="توضیحات (مثال: پرداخت قبض برق)"
+                                class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                                rows="3"
+                                style="text-align: right;"
+                            ></textarea>
+                            <div class="flex space-x-4 rtl:space-x-reverse">
+                                <label class="flex items-center cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="taskNoteType"
+                                        value="task"
+                                        id="type-task"
+                                        checked
+                                        class="form-radio text-blue-600 h-5 w-5"
+                                    />
+                                    <span class="ml-2 text-blue-600 font-medium">وظیفه</span>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="taskNoteType"
+                                        value="note"
+                                        id="type-note"
+                                        class="form-radio text-purple-600 h-5 w-5"
+                                    />
+                                    <span class="ml-2 text-purple-600 font-medium">یادداشت</span>
+                                </label>
+                            </div>
+                            <button
+                                id="add-update-task-note-btn"
+                                class="p-3 rounded-lg text-lg text-white font-bold transition-transform duration-300 bg-blue-600 hover:bg-blue-700 hover:scale-105"
+                            >
+                                افزودن
+                            </button>
+                            <button
+                                id="cancel-edit-task-note-btn"
+                                class="p-3 rounded-lg text-lg bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 hover:scale-105 transition-transform duration-300 hidden"
+                            >
+                                لغو ویرایش
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Task/Note List -->
+                    <div class="bg-white p-6 rounded-2xl shadow-md">
+                        <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-checks ml-2 rtl:mr-2"/><path d="m3 16 2 2 4-4"/><path d="m3 12 2 2 4-4"/><path d="m3 8 2 2 4-4"/><path d="M11 6h10"/><path d="M11 10h10"/><path d="M11 14h10"/><path d="M11 18h10"/></svg>
+                            لیست وظایف و یادداشت‌ها
+                        </h3>
+                        <div id="task-note-list">
+                            <!-- Tasks/Notes will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('main-content').innerHTML = content;
+            addTaskNoteEventListeners();
+            updateTaskNoteList();
+            if (currentEditingTaskNoteId) {
+                const taskNoteToEdit = tasksNotes.find(tn => tn.id === currentEditingTaskNoteId);
+                if (taskNoteToEdit) {
+                    fillTaskNoteFormForEdit(taskNoteToEdit);
+                }
+            }
+        }
+
+        function addTaskNoteEventListeners() {
+            const addUpdateBtn = document.getElementById('add-update-task-note-btn');
+            const cancelEditBtn = document.getElementById('cancel-edit-task-note-btn');
+
+            if (addUpdateBtn) addUpdateBtn.onclick = handleAddOrUpdateTaskNote;
+            if (cancelEditBtn) cancelEditBtn.onclick = cancelEditTaskNote;
+
+            document.getElementById('task-note-list').addEventListener('click', (event) => {
+                const target = event.target.closest('button, input[type="checkbox"]');
+                if (!target) return;
+
+                const taskNoteId = target.dataset.id;
+                if (target.classList.contains('edit-btn')) {
+                    handleEditTaskNote(taskNoteId);
+                } else if (target.classList.contains('delete-btn')) {
+                    handleDeleteTaskNote(taskNoteId);
+                } else if (target.type === 'checkbox' && target.classList.contains('task-checkbox')) {
+                    handleToggleTaskCompletion(taskNoteId, target.checked);
+                }
+            });
+        }
+
+        function updateTaskNoteList() {
+            const taskNoteListDiv = document.getElementById('task-note-list');
+            if (!taskNoteListDiv) return;
+
+            if (tasksNotes.length === 0) {
+                taskNoteListDiv.innerHTML = '<p class="text-gray-500 text-center py-4">هنوز وظیفه یا یادداشتی ثبت نشده است.</p>';
+                return;
+            }
+
+            const sortedTasksNotes = [...tasksNotes].sort((a, b) => {
+                if (a.type === 'task' && b.type === 'note') return -1;
+                if (a.type === 'note' && b.type === 'task') return 1;
+                if (a.type === 'task' && b.type === 'task') {
+                    if (a.completed === b.completed) return 0;
+                    return a.completed ? 1 : -1;
+                }
+                return 0;
+            });
+
+            taskNoteListDiv.innerHTML = `
+                <ul class="divide-y divide-gray-200">
+                    ${sortedTasksNotes.map(tn => `
+                        <li class="py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                            <div class="flex-grow mb-2 sm:mb-0 flex items-center">
+                                ${tn.type === 'task' ? `
+                                    <input type="checkbox" data-id="${tn.id}" class="task-checkbox h-5 w-5 text-blue-600 rounded mr-2 rtl:ml-2" ${tn.completed ? 'checked' : ''}>
+                                ` : ''}
+                                <p class="font-medium text-gray-900 ${tn.type === 'task' && tn.completed ? 'line-through text-gray-500' : ''}">${tn.description}</p>
+                                <span class="text-sm text-gray-500 mr-2 rtl:ml-2">(${tn.type === 'task' ? 'وظیفه' : 'یادداشت'})</span>
+                            </div>
+                            <div class="flex items-center mt-2 sm:mt-0">
+                                <button
+                                    data-id="${tn.id}"
+                                    class="edit-btn p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors duration-200 ml-2 rtl:mr-2 hover:scale-105 transition-transform duration-300"
+                                    title="ویرایش"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-square-pen"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                                </button>
+                                <button
+                                    data-id="${tn.id}"
+                                    class="delete-btn p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors duration-200"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                </button>
+                            </div>
+                        </li>
+                    `).join('')}
+                </ul>
+            `;
+        }
+
+        function handleAddOrUpdateTaskNote() {
+            const descriptionInput = document.getElementById('task-note-description');
+            const typeTaskRadio = document.getElementById('type-task');
+
+            const description = descriptionInput.value.trim();
+            const type = typeTaskRadio.checked ? 'task' : 'note';
+
+            if (!description) {
+                showToast('لطفاً توضیحات وظیفه/یادداشت را وارد کنید.', 'error');
+                return;
+            }
+
+            if (currentEditingTaskNoteId) {
+                tasksNotes = tasksNotes.map(tn =>
+                    tn.id === currentEditingTaskNoteId
+                        ? { ...tn, description, type }
+                        : tn
+                );
+                showToast('وظیفه/یادداشت با موفقیت ویرایش شد.', 'success');
+            } else {
+                const newTaskNote = {
+                    id: Date.now().toString(),
+                    description,
+                    type,
+                    completed: type === 'task' ? false : undefined
+                };
+                tasksNotes.unshift(newTaskNote);
+                showToast('وظیفه/یادداشت با موفقیت اضافه شد.', 'success');
+            }
+
+            saveData('tasksNotes', tasksNotes);
+            resetTaskNoteForm();
+            updateTaskNoteList();
+        }
+
+        function fillTaskNoteFormForEdit(taskNote) {
+            document.getElementById('task-note-form-title').textContent = 'ویرایش وظیفه/یادداشت';
+            document.getElementById('task-note-description').value = taskNote.description;
+            if (taskNote.type === 'task') {
+                document.getElementById('type-task').checked = true;
+            } else {
+                document.getElementById('type-note').checked = true;
+            }
+            document.getElementById('add-update-task-note-btn').textContent = 'ویرایش';
+            document.getElementById('cancel-edit-task-note-btn').classList.remove('hidden');
+            currentEditingTaskNoteId = taskNote.id;
+        }
+
+        function handleEditTaskNote(id) {
+            const taskNoteToEdit = tasksNotes.find(tn => tn.id === id);
+            if (taskNoteToEdit) {
+                fillTaskNoteFormForEdit(taskNoteToEdit);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function handleDeleteTaskNote(id) {
+            showModal('آیا مطمئن هستید که می‌خواهید این وظیفه/یادداشت را حذف کنید؟', () => {
+                tasksNotes = tasksNotes.filter(tn => tn.id !== id);
+                saveData('tasksNotes', tasksNotes);
+                updateTaskNoteList();
+                showToast('وظیفه/یادداشت با موفقیت حذف شد.', 'success');
+            });
+        }
+
+        function handleToggleTaskCompletion(id, isCompleted) {
+            tasksNotes = tasksNotes.map(tn =>
+                tn.id === id && tn.type === 'task'
+                    ? { ...tn, completed: isCompleted }
+                    : tn
+            );
+            saveData('tasksNotes', tasksNotes);
+            updateTaskNoteList();
+        }
+
+        function resetTaskNoteForm() {
+            document.getElementById('task-note-form-title').textContent = 'افزودن وظیفه/یادداشت جدید';
+            document.getElementById('task-note-description').value = '';
+            document.getElementById('type-task').checked = true;
+            document.getElementById('add-update-task-note-btn').textContent = 'افزودن';
+            document.getElementById('cancel-edit-task-note-btn').classList.add('hidden');
+            currentEditingTaskNoteId = null;
+        }
+
+        function cancelEditTaskNote() {
+            resetTaskNoteForm();
+        }
+
+
+        // --- Navigation Logic ---
+        const navItems = document.querySelectorAll('.nav-item');
+        const mainContent = document.getElementById('main-content');
+
+        /**
+         * Switches the active tab and renders the corresponding content.
+         * @param {string} tabName - The name of the tab to switch to.
+         */
+        function switchTab(tabName) {
+            mainContent.style.opacity = '0';
+
+            navItems.forEach(item => {
+                item.classList.remove('active');
+            });
+
+            const activeNavItem = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
+            if (activeNavItem) {
+                activeNavItem.classList.add('active');
+            }
+
+            setTimeout(() => {
+                switch (tabName) {
+                    case 'dashboard':
+                        renderDashboard();
+                        break;
+                    case 'transactions':
+                        renderTransactions();
+                        break;
+                    case 'budgets':
+                        renderBudgets();
+                        break;
+                    case 'loans':
+                        renderLoans();
+                        break;
+                    case 'checks':
+                        renderChecks();
+                        break;
+                    case 'reports':
+                        renderReports();
+                        break;
+                    case 'tasks-notes':
+                        renderTasksNotes();
+                        break;
+                    default:
+                        renderDashboard();
+                }
+                mainContent.style.opacity = '1';
+            }, 150);
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const tabName = item.dataset.tab;
+                switchTab(tabName);
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            recalculateAccountBalances();
+            switchTab('dashboard');
+        });
+        
+        function updateMonthlyReport() {
+            const monthlyReportDiv = document.getElementById('monthly-report');
+            if (!monthlyReportDiv) return;
+
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth(); // 0-indexed
+
+            let monthlyIncome = 0;
+            let monthlyExpense = 0;
+
+            transactions.forEach(t => {
+                const transactionDate = new Date(t.date);
+                if (transactionDate.getFullYear() === currentYear && transactionDate.getMonth() === currentMonth) {
+                    if (t.type === 'income') {
+                        monthlyIncome += parseFloat(t.amount || 0);
+                    } else if (t.type === 'expense') {
+                        monthlyExpense += parseFloat(t.amount || 0);
+                    }
+                }
+            });
+            const monthlyNet = monthlyIncome - monthlyExpense;
+
+            // Using simple month numbers as Jalaali conversion is removed
+            const monthNames = ["ژانویه", "فوریه", "مارس", "آوریل", "می", "ژوئن", "جولای", "اوت", "سپتامبر", "اکتبر", "نوامبر", "دسامبر"];
+            const currentMonthName = monthNames[currentMonth];
+
+
+            monthlyReportDiv.innerHTML = `
+                <p class="text-gray-700">خلاصه مالی برای ${toPersianDigits(currentMonthName)} ${toPersianDigits(currentYear)}:</p>
+                <ul class="mt-2 space-y-2">
+                    <li class="flex justify-between items-center text-green-600">
+                        <span class="font-medium">درآمد ماهانه:</span>
+                        <span class="font-bold">${toPersianDigits(monthlyIncome.toLocaleString('fa-IR'))} تومان</span>
+                    </li>
+                    <li class="flex justify-between items-center text-red-600">
+                        <span class="font-medium">هزینه ماهانه:</span>
+                        <span class="font-bold">${toPersianDigits(monthlyExpense.toLocaleString('fa-IR'))} تومان</span>
+                    </li>
+                    <li class="flex justify-between items-center ${monthlyNet >= 0 ? 'text-blue-700' : 'text-purple-700'} border-t pt-2 mt-2">
+                        <span class="font-semibold">مانده خالص ماهانه:</span>
+                        <span class="font-bold text-lg">${toPersianDigits(monthlyNet.toLocaleString('fa-IR'))} تومان</span>
+                    </li>
+                </ul>
+                <p class="text-sm text-gray-500 mt-4">این گزارش فقط تراکنش‌های ثبت شده در ماه جاری را شامل می‌شود.</p>
+            `;
+        }
+
+
+    </script>
+</body>
+</html>
